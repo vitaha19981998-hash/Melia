@@ -237,7 +237,7 @@ nav{
     <nav>
         <a href="#about">Про мене</a>
         <a href="#portfolio">Портфоліо</a>
-        <a href="#contact">Написати</a>
+        <a href="#contact">Напишіть мені</a>
     </nav>
 </header>
 
@@ -299,7 +299,7 @@ nav{
         </div>
 
         <div class="card">
-            <img src="work3.jpg" ">
+            <img src="work3.jpg">
             <div class="card-content">
                 <h3>Персонаж</h3>
                 <p>Character.</p>
@@ -314,12 +314,17 @@ nav{
     <h2 class="title">Напишіть мені</h2>
 
     <div class="contact-container">
-        <form id="contactForm" class="contact-form">
+        <!-- Using formsubmit.co to forward form submissions to the provided email -->
+        <form id="contactForm" class="contact-form" action="https://formsubmit.co/vitaha19981998@gmail.com" method="POST" novalidate>
+            <!-- Optional hidden fields for formsubmit.co -->
+            <input type="hidden" name="_subject" value="Повідомлення з сайту Melia 3D">
+            <input type="hidden" name="_captcha" value="false">
+
             <input type="text" id="name" name="name" placeholder="Ваше ім'я" required>
             <input type="email" id="email" name="email" placeholder="Ваш email" required>
             <textarea id="message" name="message" placeholder="Ваше повідомлення" required></textarea>
             <button type="submit">Відправити</button>
-            <p class="contact-note">Натискання кнопки відкриє ваш поштовий клієнт для відправки листа на vitaha19981998@gmail.com. Якщо немає поштового клієнта, ви можете надіслати листа напряму: <a href="mailto:vitaha19981998@gmail.com">vitaha19981998@gmail.com</a></p>
+            <p class="contact-note">Повідомлення буде переслано на <strong>vitaha19981998@gmail.com</strong> через сервіс formsubmit.co. Перший раз сервіс надішле лист-підтвердження на вашу пошту — після підтвердження подальші повідомлення надходитимуть одразу.</p>
         </form>
     </div>
 </section>
@@ -327,11 +332,11 @@ nav{
 <footer>
     © 2026 Melia 3D Portfolio
 </footer>
-</footer>
 
 <script>
 document.getElementById('contactForm').addEventListener('submit', function(e){
     e.preventDefault();
+    var form = document.getElementById('contactForm');
     var name = document.getElementById('name').value.trim();
     var email = document.getElementById('email').value.trim();
     var message = document.getElementById('message').value.trim();
@@ -341,12 +346,13 @@ document.getElementById('contactForm').addEventListener('submit', function(e){
         return;
     }
 
-    var subject = encodeURIComponent('Повідомлення з сайту від ' + name);
-    var body = encodeURIComponent("Ім'я: " + name + "\nEmail: " + email + "\n\n" + message);
-    var mailtoLink = 'mailto:vitaha19981998@gmail.com?subject=' + subject + '&body=' + body;
+    var submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Відправка...';
 
-    // Відкриваємо поштовий клієнт
-    window.location.href = mailtoLink;
+    // Після валідації відправляємо звичайну форму (formsubmit.co обробить POST і пересласть лист на емейл)
+    // Використовуємо звичайну відправку, щоб уникнути CORS-проблем з AJAX.
+    form.submit();
 });
 </script>
 
