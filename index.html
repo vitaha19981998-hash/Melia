@@ -163,7 +163,47 @@ section{
 .card-content p{
     color:#bdbdbd;
 }
-
+/* Contact form styles */
+.contact-container{
+    max-width:800px;
+    margin:0 auto;
+}
+.contact-form{
+    background:#15171d;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 6px 30px rgba(0,0,0,.6);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+.contact-form input,
+.contact-form textarea{
+    background:#0f1117;
+    border:1px solid rgba(255,255,255,.06);
+    padding:12px 14px;
+    border-radius:8px;
+    color:#eaeaea;
+    font-size:15px;
+}
+.contact-form textarea{
+    min-height:140px;
+    resize:vertical;
+}
+.contact-form button{
+    align-self:flex-start;
+    padding:12px 20px;
+    background:#4f8cff;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+.contact-note{
+    color:#bdbdbd;
+    font-size:14px;
+    margin-top:8px;
+}
 footer{
     text-align:center;
     padding:35px;
@@ -197,6 +237,7 @@ nav{
     <nav>
         <a href="#about">Про мене</a>
         <a href="#portfolio">Портфоліо</a>
+        <a href="#contact">Написати</a>
     </nav>
 </header>
 
@@ -269,9 +310,45 @@ nav{
 
 </section>
 
+<section id="contact">
+    <h2 class="title">Напишіть мені</h2>
+
+    <div class="contact-container">
+        <form id="contactForm" class="contact-form">
+            <input type="text" id="name" name="name" placeholder="Ваше ім'я" required>
+            <input type="email" id="email" name="email" placeholder="Ваш email" required>
+            <textarea id="message" name="message" placeholder="Ваше повідомлення" required></textarea>
+            <button type="submit">Відправити</button>
+            <p class="contact-note">Натискання кнопки відкриє ваш поштовий клієнт для відправки листа на vitaha19981998@gmail.com. Якщо немає поштового клієнта, ви можете надіслати листа напряму: <a href="mailto:vitaha19981998@gmail.com">vitaha19981998@gmail.com</a></p>
+        </form>
+    </div>
+</section>
+
 <footer>
     © 2026 Melia 3D Portfolio
 </footer>
+</footer>
+
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('name').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var message = document.getElementById('message').value.trim();
+
+    if(!name || !email || !message){
+        alert('Будь ласка, заповніть усі поля');
+        return;
+    }
+
+    var subject = encodeURIComponent('Повідомлення з сайту від ' + name);
+    var body = encodeURIComponent("Ім'я: " + name + "\nEmail: " + email + "\n\n" + message);
+    var mailtoLink = 'mailto:vitaha19981998@gmail.com?subject=' + subject + '&body=' + body;
+
+    // Відкриваємо поштовий клієнт
+    window.location.href = mailtoLink;
+});
+</script>
 
 </body>
 </html>
