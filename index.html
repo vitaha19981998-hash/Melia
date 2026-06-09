@@ -13,15 +13,6 @@
     font-family:Segoe UI,sans-serif;
 }
 
-/* Audio permission prompt */
-.audio-permission{
-    position:fixed; left:50%; top:18px; transform:translateX(-50%);
-    z-index:11000; background:rgba(0,0,0,0.6); color:#eaf4ff;
-    padding:10px 14px; border-radius:10px; backdrop-filter:blur(6px);
-    display:flex; gap:10px; align-items:center; font-size:14px; box-shadow:0 6px 30px rgba(0,0,0,0.6);
-}
-.audio-permission button{ background:#4f8cff; border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer; }
-.audio-permission small{ opacity:0.85; color:#cfe6ff; }
 
 /* Ripple click effect */
 .click-ripple{
@@ -830,17 +821,32 @@ function initHeroRain(){
     rainAudio.preload = 'auto';
     rainAudio.playsInline = true;
     let audioNeedsGesture = false;
-    // Try to play immediately if hero is visible; if blocked, wait for user gesture.
+    let rainTrying = false;
+    // volume control
+    let volTarget = 0.22;
+    const volMin = 0.02, volMax = 0.6;
+    rainAudio.volume = volTarget;
+
+    // Try to play audio when hero is visible. Best-effort autoplay without UI.
     function tryPlayAudio(){
         if (!heroInView()) return;
+        if (rainTrying) return;
+        rainTrying = true;
         rainAudio.play().then(()=>{
             audioNeedsGesture = false;
+            rainTrying = false;
         }).catch(()=>{
+            // autoplay likely blocked; mark flag so we can retry on interaction
             audioNeedsGesture = true;
+            rainTrying = false;
         });
     }
-    // attempt initial play
+    // initial attempt
     tryPlayAudio();
+
+    // Retry once on first user interaction if autoplay was blocked (no UI shown)
+    const _startOnUser = function startOnUser(){ if (audioNeedsGesture) tryPlayAudio(); document.removeEventListener('pointerdown', startOnUser); };
+    document.addEventListener('pointerdown', _startOnUser, {passive:true});
 
     let w=0,h=0, drops = [], running = true;
     let lastTime = performance.now();
@@ -878,6 +884,9 @@ function initHeroRain(){
         const y = window.scrollY;
         scrollDelta = y - lastScrollY;
         lastScrollY = y;
+        // adjust target volume: scroll down -> reduce, scroll up -> increase
+        if (scrollDelta > 0) volTarget = Math.max(volMin, volTarget - 0.06);
+        else if (scrollDelta < 0) volTarget = Math.min(volMax, volTarget + 0.06);
         // try play audio after user scroll (user gesture)
         tryPlayAudio();
     }
@@ -930,38 +939,27 @@ function initHeroRain(){
                 }
             }
             scrollDelta *= 0.9;
+            // smoothly approach target volume
+            try{
+                if (!isNaN(rainAudio.volume)){
+                    const cur = rainAudio.volume;
+                    const nv = cur + (volTarget - cur) * 0.08;
+                    rainAudio.volume = Math.max(0, Math.min(1, nv));
+                }
+                // ensure audio plays while rain is running (attempt if not playing and not blocked)
+                if (running && rainAudio.paused && !audioNeedsGesture && !rainTrying){ tryPlayAudio(); }
+            }catch(e){}
         }
         requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
 
-    // try play audio on first interaction if needed
-    if (audioNeedsGesture){
-        const startOnUser = ()=>{ tryPlayAudio(); document.removeEventListener('pointerdown', startOnUser); hideAudioPrompt(); };
+    // Try to play audio on first user interaction if autoplay was blocked.
+    (function(){
+        const startOnUser = function(){ tryPlayAudio(); hideAudioPrompt(); document.removeEventListener('pointerdown', startOnUser); };
         document.addEventListener('pointerdown', startOnUser, {passive:true});
-
-        // show a small unobtrusive prompt so user can enable sound immediately
-        let audioPromptEl = null;
-        function hideAudioPrompt(){
-            try{ if (audioPromptEl && audioPromptEl.parentNode) audioPromptEl.parentNode.removeChild(audioPromptEl); }catch(e){}
-            audioPromptEl = null;
-        }
-        function showAudioPrompt(){
-            if (audioPromptEl) return;
-            audioPromptEl = document.createElement('div');
-            audioPromptEl.className = 'audio-permission';
-            const btn = document.createElement('button'); btn.textContent = 'Увімкнути звук';
-            const info = document.createElement('small'); info.textContent = 'Звук дощу';
-            audioPromptEl.appendChild(btn); audioPromptEl.appendChild(info);
-            document.body.appendChild(audioPromptEl);
-            btn.addEventListener('click', function(){ tryPlayAudio(); hideAudioPrompt(); });
-            // hide when audio actually starts
-            rainAudio.addEventListener('play', hideAudioPrompt);
-        }
-        // show prompt after a short delay if still blocked
-        setTimeout(()=>{ if (audioNeedsGesture) showAudioPrompt(); }, 250);
-    }
+    })();
 
     // Pause audio when tab is hidden, resume when visible and hero in view
     document.addEventListener('visibilitychange', ()=>{
