@@ -1000,11 +1000,25 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     const badge = document.createElement('div');
     badge.id = 'online-badge';
     badge.textContent = 'Online 0';
+    // small status text for debugging/feedback
+    const status = document.createElement('span');
+    status.style.fontSize = '12px';
+    status.style.opacity = '0.85';
+    status.style.marginLeft = '8px';
+    status.textContent = '';
+    badge.appendChild(status);
     document.body.appendChild(badge);
 
-    // Use public Gun relay peer; you may add more peers if needed
-    const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
-    const siteKey = 'site-presence:' + location.hostname + location.pathname;
+    // Try multiple public relay peers (best-effort). If some are down, others may work.
+    const peers = [
+      'https://gun-manhattan.herokuapp.com/gun',
+      'https://gun-us.herokuapp.com/gun',
+      'https://gun-eu.herokuapp.com/gun'
+    ];
+    const gun = Gun({ peers });
+
+    // Use hostname only so counter is shared across pages on same host
+    const siteKey = 'site-presence:' + location.hostname;
     const presence = gun.get(siteKey);
 
     const clientId = Math.random().toString(36).slice(2);
@@ -1012,26 +1026,46 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     const STALE_MS = 20000;
 
     let heartbeat = null;
-    function announce(){ try{ presence.get(clientId).put({ ts: Date.now() }); }catch(e){} }
+    function announce(){
+      try{
+        presence.get(clientId).put({ ts: Date.now() }, ack=>{
+          if (ack && ack.err) console.warn('presence put err', ack.err);
+        });
+      }catch(e){ console.warn('announce err', e); }
+    }
     function startHeartbeat(){ if (heartbeat) return; announce(); heartbeat = setInterval(announce, HEARTBEAT_MS); }
     function stopHeartbeat(){ if (!heartbeat) return; clearInterval(heartbeat); heartbeat = null; }
 
     if (document.visibilityState === 'visible') startHeartbeat();
     document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible') startHeartbeat(); else stopHeartbeat(); });
 
-    function removePresence(){ try{ presence.get(clientId).put(null); }catch(e){} }
+    function removePresence(){ try{ presence.get(clientId).put(null); }catch(e){ console.warn('remove err', e); } }
     window.addEventListener('pagehide', ()=>{ removePresence(); stopHeartbeat(); });
     window.addEventListener('beforeunload', ()=>{ removePresence(); stopHeartbeat(); });
 
     const active = {};
-    function refreshCount(){ const now = Date.now(); let count = 0; for (const k in active){ if (active[k] && active[k].ts && (now - active[k].ts <= STALE_MS)) count++; } badge.textContent = `Online ${count}`; }
+    function refreshCount(){ const now = Date.now(); let count = 0; for (const k in active){ if (active[k] && active[k].ts && (now - active[k].ts <= STALE_MS)) count++; } badge.firstChild && (badge.firstChild.textContent = `Online ${count}`); }
 
-    presence.map().on((data, key)=>{ if (!data) delete active[key]; else if (data.ts) active[key] = data; refreshCount(); });
+    let seenAny = false;
+    // listen for presence map changes
+    presence.map().on((data, key)=>{
+      seenAny = true;
+      status.textContent = '';
+      if (!data) delete active[key];
+      else if (data.ts) active[key] = data;
+      refreshCount();
+    });
 
+    // show connecting message if nothing received in 4s
+    setTimeout(()=>{
+      if (!seenAny) { status.textContent = ' (підключаємось...)'; console.debug('No presence events yet — check peers or network'); }
+    }, 4000);
+
+    // periodic cleanup in case events are missed
     setInterval(()=>{ const now = Date.now(); let removed=false; for (const k in active){ if (!active[k] || !active[k].ts || (now - active[k].ts > STALE_MS)) { delete active[k]; removed = true; } } if (removed) refreshCount(); }, HEARTBEAT_MS);
 
-    // ensure heartbeat started
-    startHeartbeat();
+    // start
+    try { startHeartbeat(); } catch(e){ console.warn('failed to start heartbeat', e); }
   })();
 </script>
 
