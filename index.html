@@ -344,24 +344,6 @@ nav{
 }
 </style>
 
-<!-- Online badge style -->
-<style>
-  #online-badge{
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    background: rgba(0,0,0,0.75);
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 12px;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    z-index: 11000;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    pointer-events: none; /* non-interactive badge */
-  }
-</style>
-
 </head>
 <body>
 
@@ -486,18 +468,12 @@ nav{
 (function(){
     // Click sound playback (plays on left mouse button down)
     const _clickSoundUrl = 'clicksound.mp3';
-    // reuse single Audio instance to avoid creating many objects
-    let _clickAudio = null;
     function _playClickSound(){
         try{
-            if (!_clickAudio){
-                _clickAudio = new Audio(_clickSoundUrl);
-                _clickAudio.preload = 'none';
-                _clickAudio.volume = 0.9;
-            }
-            // rewind and play; ignore promise rejection
-            try{ _clickAudio.currentTime = 0; }catch(e){}
-            _clickAudio.play().catch(()=>{});
+            const s = new Audio(_clickSoundUrl);
+            s.volume = 0.9;
+            // play, ignore promise rejection
+            s.play().catch(()=>{});
         }catch(e){}
     }
     function createClickRipple(x,y){
@@ -842,8 +818,7 @@ function initHeroRain(){
     rainAudio.loop = true;
     rainAudio.volume = 0.22;
     rainAudio.playbackRate = 0.95; // slightly slower
-    // avoid eager preload to reduce network warnings if file absent
-    rainAudio.preload = 'none';
+    rainAudio.preload = 'auto';
     rainAudio.playsInline = true;
     let audioNeedsGesture = false;
     let rainTrying = false;
@@ -997,77 +972,6 @@ function initHeroRain(){
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHeroRain); else initHeroRain();
 
 })();
-</script>
-
-<!-- Online presence (Gun DB) - lightweight client-side counter -->
-<script src="https://cdn.jsdelivr.net/npm/gun/gun.min.js"></script>
-<script>
-  (function(){
-    // Create badge
-    const badge = document.createElement('div');
-    badge.id = 'online-badge';
-    badge.textContent = 'Online 0';
-    const status = document.createElement('span');
-    status.style.fontSize = '12px'; status.style.opacity = '0.9'; status.style.marginLeft = '8px'; status.textContent = '';
-    badge.appendChild(status);
-    document.body.appendChild(badge);
-
-    // Use a small set of known public Gun peers. If one fails others may replicate.
-    const peers = [
-      'https://gunjs.herokuapp.com/gun',
-      'https://gun-manhattan.herokuapp.com/gun'
-    ];
-    const gun = Gun({ peers, localStorage: false });
-
-    // Namespace by hostname (counts users across the site)
-    const siteKey = 'site-presence:' + location.hostname;
-    const root = gun.get(siteKey);
-    const clients = root.get('clients');
-
-    const clientId = Math.random().toString(36).slice(2);
-    const HEARTBEAT_MS = 4000;
-    const STALE_MS = 15000;
-
-    let hb = null;
-    function announce(){
-      try{ clients.get(clientId).put({ ts: Date.now() }); }
-      catch(e){ console.warn('announce err', e); }
-    }
-    function start(){ if (hb) return; announce(); hb = setInterval(announce, HEARTBEAT_MS); }
-    function stop(){ if (!hb) return; clearInterval(hb); hb = null; }
-
-    if (document.visibilityState === 'visible') start();
-    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible') start(); else stop(); });
-
-    function removeMe(){ try{ clients.get(clientId).put(null); }catch(e){/*ignore*/} }
-    window.addEventListener('pagehide', ()=>{ removeMe(); stop(); });
-    window.addEventListener('beforeunload', ()=>{ removeMe(); stop(); });
-
-    const active = {};
-    function refresh(){ const now = Date.now(); let c=0; for (const k in active){ if (active[k] && active[k].ts && (now - active[k].ts <= STALE_MS)) c++; } badge.firstChild && (badge.firstChild.textContent = `Online ${c}`); }
-
-    // Listen on clients map
-    let received = false;
-    clients.map().on((data, key)=>{
-      received = true;
-      status.textContent = '';
-      // Gun may send metadata, ignore keys starting with '_'
-      if (!key || String(key).charAt(0) === '_') return;
-      if (!data) { delete active[key]; }
-      else if (data.ts) { active[key] = data; }
-      refresh();
-      // debug
-      // console.log('presence update', key, data);
-    });
-
-    setTimeout(()=>{ if (!received) status.textContent = ' (підключаємось...)'; }, 3000);
-
-    // cleanup interval
-    setInterval(()=>{ const now = Date.now(); let rem=false; for (const k in active){ if (!active[k] || !active[k].ts || (now - active[k].ts > STALE_MS)) { delete active[k]; rem = true; } } if (rem) refresh(); }, HEARTBEAT_MS);
-
-    // start heartbeat
-    try{ start(); }catch(e){ console.warn('hb start err', e); }
-  })();
 </script>
 
 </body>
