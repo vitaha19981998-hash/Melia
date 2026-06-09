@@ -344,6 +344,24 @@ nav{
 }
 </style>
 
+<!-- Online badge style -->
+<style>
+  #online-badge{
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    z-index: 11000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    pointer-events: none; /* non-interactive badge */
+  }
+</style>
+
 </head>
 <body>
 
@@ -972,6 +990,49 @@ function initHeroRain(){
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHeroRain); else initHeroRain();
 
 })();
+</script>
+</body>
+
+<!-- Online presence (Gun DB) - lightweight client-side counter -->
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.min.js"></script>
+<script>
+  (function(){
+    const badge = document.createElement('div');
+    badge.id = 'online-badge';
+    badge.textContent = 'Online 0';
+    document.body.appendChild(badge);
+
+    // Use public Gun relay peer; you may add more peers if needed
+    const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
+    const siteKey = 'site-presence:' + location.hostname + location.pathname;
+    const presence = gun.get(siteKey);
+
+    const clientId = Math.random().toString(36).slice(2);
+    const HEARTBEAT_MS = 5000;
+    const STALE_MS = 20000;
+
+    let heartbeat = null;
+    function announce(){ try{ presence.get(clientId).put({ ts: Date.now() }); }catch(e){} }
+    function startHeartbeat(){ if (heartbeat) return; announce(); heartbeat = setInterval(announce, HEARTBEAT_MS); }
+    function stopHeartbeat(){ if (!heartbeat) return; clearInterval(heartbeat); heartbeat = null; }
+
+    if (document.visibilityState === 'visible') startHeartbeat();
+    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible') startHeartbeat(); else stopHeartbeat(); });
+
+    function removePresence(){ try{ presence.get(clientId).put(null); }catch(e){} }
+    window.addEventListener('pagehide', ()=>{ removePresence(); stopHeartbeat(); });
+    window.addEventListener('beforeunload', ()=>{ removePresence(); stopHeartbeat(); });
+
+    const active = {};
+    function refreshCount(){ const now = Date.now(); let count = 0; for (const k in active){ if (active[k] && active[k].ts && (now - active[k].ts <= STALE_MS)) count++; } badge.textContent = `Online ${count}`; }
+
+    presence.map().on((data, key)=>{ if (!data) delete active[key]; else if (data.ts) active[key] = data; refreshCount(); });
+
+    setInterval(()=>{ const now = Date.now(); let removed=false; for (const k in active){ if (!active[k] || !active[k].ts || (now - active[k].ts > STALE_MS)) { delete active[k]; removed = true; } } if (removed) refreshCount(); }, HEARTBEAT_MS);
+
+    // ensure heartbeat started
+    startHeartbeat();
+  })();
 </script>
 
 </body>
