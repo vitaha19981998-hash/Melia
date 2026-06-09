@@ -314,9 +314,9 @@ nav{
     <h2 class="title">Напишіть мені</h2>
 
     <div class="contact-container">
-        <!-- Using formsubmit.co to forward form submissions to the provided email -->
-        <form id="contactForm" class="contact-form" action="https://formsubmit.co/vitaha19981998@gmail.com" method="POST" novalidate>
-            <!-- Optional hidden fields for formsubmit.co -->
+        <!-- Просте рішення через formsubmit.co — не потребує додаткових налаштувань -->
+        <form id="contactForm" class="contact-form" action="https://formsubmit.co/vitaha19981998@gmail.com" method="POST">
+            <!-- Тема листа та відключення captcha -->
             <input type="hidden" name="_subject" value="Повідомлення з сайту Melia 3D">
             <input type="hidden" name="_captcha" value="false">
 
@@ -324,7 +324,7 @@ nav{
             <input type="email" id="email" name="email" placeholder="Ваш email" required>
             <textarea id="message" name="message" placeholder="Ваше повідомлення" required></textarea>
             <button type="submit">Відправити</button>
-            <p class="contact-note">Повідомлення буде переслано на <strong>vitaha19981998@gmail.com</strong> через сервіс formsubmit.co. Перший раз сервіс надішле лист-підтвердження на вашу пошту — після підтвердження подальші повідомлення надходитимуть одразу.</p>
+            <p class="contact-note">Після першої відправки ви отримаєте лист-підтвердження від formsubmit.co — підтвердіть, і далі повідомлення надходитимуть одразу на <strong>vitaha19981998@gmail.com</strong>.</p>
         </form>
     </div>
 </section>
@@ -333,28 +333,7 @@ nav{
     © 2026 Melia 3D Portfolio
 </footer>
 
-<script>
-document.getElementById('contactForm').addEventListener('submit', function(e){
-    e.preventDefault();
-    var form = document.getElementById('contactForm');
-    var name = document.getElementById('name').value.trim();
-    var email = document.getElementById('email').value.trim();
-    var message = document.getElementById('message').value.trim();
-
-    if(!name || !email || !message){
-        alert('Будь ласка, заповніть усі поля');
-        return;
-    }
-
-    var submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Відправка...';
-
-    // Після валідації відправляємо звичайну форму (formsubmit.co обробить POST і пересласть лист на емейл)
-    // Використовуємо звичайну відправку, щоб уникнути CORS-проблем з AJAX.
-    form.submit();
-});
-</script>
+<!-- Ніякого JavaScript не потрібно: форма відправляється стандартним POST на formsubmit.co -->
 
 </body>
 </html>
