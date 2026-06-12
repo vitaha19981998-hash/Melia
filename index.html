@@ -14,6 +14,8 @@
 }
 
 
+
+
 /* Ripple click effect */
 .click-ripple{
     position:fixed;
@@ -89,14 +91,27 @@ header{
 }
 
 nav a{
-    color:white;
-    text-decoration:none;
-    margin-left:30px;
-    transition:.3s;
+    color: white;
+    text-decoration: none;
+    margin-left: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    display: inline-block;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid transparent;
+    backdrop-filter: blur(6px);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.4px;
+    transition: transform .16s cubic-bezier(.2,.9,.2,1), box-shadow .18s ease, background .18s ease, border-color .18s ease;
 }
 
 nav a:hover{
-    color:#4f8cff;
+    color: #fff;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(79,140,255,0.16);
+    background: linear-gradient(90deg, #4f8cff, #3b78e6);
+    border-color: rgba(255,255,255,0.08);
 }
 
 .hero{
@@ -133,16 +148,18 @@ nav a:hover{
 .btn{
     display:inline-block;
     margin-top:35px;
-    padding:15px 35px;
-    background:#4f8cff;
+    padding:12px 26px;
+    background:#4f8cff; /* blue */
     color:white;
     text-decoration:none;
-    border-radius:12px;
-    transition:.3s;
+    border-radius:10px;
+    transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    box-shadow: 0 6px 18px rgba(79,140,255,0.12);
 }
 
 .btn:hover{
-    transform:translateY(-4px);
+    transform:translateY(-4px) scale(1.01);
+    box-shadow: 0 10px 30px rgba(79,140,255,0.18);
 }
 
 section{
@@ -351,10 +368,12 @@ nav{
     <div class="logo">Melia<span>3D</span></div>
 
     <nav>
+        <!-- Header links order reaffirmed; models button retained -->
         <a href="#about">Про мене</a>
         <a href="#portfolio">Портфоліо</a>
         <a href="#contacts">Контакти</a>
         <a href="#contact">Напишіть мені</a>
+        <a class="models-btn" href="models.html">Мої моделі</a>
     </nav>
 </header>
 
@@ -404,6 +423,8 @@ nav{
 
     </div>
 
+    <!-- Удалено дубль-кнопку "Усі роботи" у секції "Про мене" -->
+
 </section>
 
 <section id="portfolio">
@@ -436,6 +457,10 @@ nav{
             </div>
         </div>
 
+    </div>
+
+    <div style="text-align:center; margin-top:22px;">
+        <a href="models.html" class="btn">Усі роботи</a>
     </div>
 
 </section>
